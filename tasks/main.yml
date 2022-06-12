@@ -1,0 +1,43 @@
+#####################################################################################
+# Global
+#####################################################################################
+- name: Gathering facts if it was not done before
+  setup:
+  when: ansible_facts['os_family'] is not defined
+
+#####################################################################################
+# Resize root disk on first start for KVM VMs
+#####################################################################################
+
+- debug:
+    var: ansible_virtualization_tech_guest
+
+- name: "Resize disk for KVM VMs and if partition is less than 2Gb"
+  shell: "resize2fs /dev/vda1"
+  become: yes
+  when:
+    - "'kvm' in ansible_virtualization_tech_guest"
+    - (ansible_mounts | selectattr('mount','equalto','/') | list | first).size_total < 2048*1024*1024
+  ignore_errors: yes
+  check_mode: no
+
+#####################################################################################
+# Install KVM guest agent
+#####################################################################################
+
+- name: Install KVM Guest agent
+  apt:
+    state: latest
+    pkg:
+     - qemu-guest-agent
+  become: yes
+  when: "'kvm' in ansible_virtualization_tech_guest"
+
+- name: Enable KVM Guest agent
+  service:
+    name: qemu-guest-agent
+    state: started
+    enabled: true
+  become: yes
+  when: "'kvm' in ansible_virtualization_tech_guest"
+
