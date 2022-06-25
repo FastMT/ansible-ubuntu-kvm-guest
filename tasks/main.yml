@@ -41,3 +41,11 @@
   become: yes
   when: "'kvm' in ansible_virtualization_tech_guest"
 
+- name: Remove fwupd - firmware updater service
+  apt:
+    state: absent
+    pkg:
+     - fwupd
+  become: yes
+  when: "'kvm' in ansible_virtualization_tech_guest"
+
